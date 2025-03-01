@@ -5,11 +5,11 @@ import argparse
 import base64
 from typing import List, Dict, Any, Optional
 import anthropic
-import manifold
+import manifold3d
+from manifold3d import *
 import numpy as np
-from manifold.mesh import Mesh
-from manifold.manifold import Manifold
 from PIL import Image
+import re
 
 # Read API key from file
 try:
@@ -25,6 +25,27 @@ except Exception as e:
 # Initialize the Anthropic client
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
+def clean_code_from_markdown(text: str) -> str:
+    """
+    Remove markdown code block formatting from the text if present.
+    
+    Args:
+        text: The text that might contain markdown code blocks
+        
+    Returns:
+        Cleaned code without markdown formatting
+    """
+    # Check if the text is wrapped in markdown code blocks
+    code_block_pattern = r'^```(?:python)?\s*([\s\S]*?)```\s*$'
+    match = re.match(code_block_pattern, text.strip())
+    
+    if match:
+        # Return just the code inside the code block
+        return match.group(1).strip()
+    
+    # If no markdown formatting detected, return the original text
+    return text
+
 def encode_image_to_base64(image_path: str) -> str:
     """
     Encode an image to base64.
@@ -38,58 +59,36 @@ def encode_image_to_base64(image_path: str) -> str:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def generate_object_code_from_images(image_paths: List[str], labels: List[str]) -> Dict[str, Any]:
-    """
-    Use Claude Sonnet to generate Python code using Manifold CSG library based on 6 images from different sides.
-    
-    Args:
-        image_paths: List of paths to the 6 images (front, back, left, right, top, bottom)
-        labels: List of labels for each image (e.g., "front", "back", etc.)
-        
-    Returns:
-        Dictionary containing the object code, name and description
-    """
+def generate_object_code_from_images(image_paths: List[str], labels: List[str]) -> str:
     if len(image_paths) != 6 or len(labels) != 6:
         raise ValueError("Exactly 6 images and 6 labels are required")
     
-    system_prompt = """
+    # Read Manifold documentation from docs.txt
+    try:
+        with open("example.txt", "r") as f:
+            manifold_example = f.read().strip()
+    except FileNotFoundError:
+        raise ValueError("example.txt file not found")
+    except Exception as e:
+        raise ValueError(f"Error reading documentation: {e}")
+
+    
+    
+    system_prompt = f"""
     You are an expert in 3D modeling and 3D understanding. You will be given 6 images showing different sides 
     (front, back, left, right, top, bottom) of an object. Your task is to generate a Python script that recreates
     the object using the Manifold CSG library.
     
-    Return a JSON object with the following structure:
-    {
-        "code": "# Python code using Manifold CSG library to create the object\\n...",
-        "name": "object_name",  # A simple name for the object
-        "description": "brief description"  # A brief description of what was generated
-    }
+    Return ONLY Python code that uses Manifold CSG operations to construct the 3D model. Do not include any JSON, markdown formatting, or explanations.
     
-    The code should use Manifold CSG operations (like cube(), cylinder(), sphere(), boolean operations, etc.) 
-    to construct the 3D model. Do not generate raw mesh data with vertices and faces.
+    The code should:
+    1. Define a function named 'create_object()' that returns the final Manifold object
+    2. Include a descriptive name for the object as a comment at the top
+    3. Use Manifold CSG operations (not raw mesh data with vertices and faces)
     
-    Example of good code:
-    ```python
-    from manifold import Manifold
+    Here's an example of how to use the Manifold library:
     
-    # Create a simple cup
-    def create_cup():
-        # Main body - hollow cylinder
-        outer = Manifold.cylinder(radius=2.0, height=5.0, circularSegments=32)
-        inner = Manifold.cylinder(radius=1.8, height=4.8, circularSegments=32)
-        inner = inner.translate([0, 0, 0.2])
-        body = outer - inner
-        
-        # Handle
-        handle_ring = Manifold.cylinder(radius=0.5, height=0.3, circularSegments=32)
-        handle_ring = handle_ring - Manifold.cylinder(radius=0.3, height=0.3, circularSegments=32)
-        handle_ring = handle_ring.rotate([1, 0, 0], 90).translate([3, 0, 2.5])
-        
-        # Combine parts
-        cup = body + handle_ring
-        return cup
-    
-    cup = create_cup()
-    ```
+    {manifold_example}
     
     Carefully analyze all 6 images to create an accurate 3D representation.
     """
@@ -131,37 +130,18 @@ def generate_object_code_from_images(image_paths: List[str], labels: List[str]) 
             ]
         )
         
-        # Extract the JSON from the response
         response_text = message.content[0].text
-        # Find JSON content (assuming it's the only JSON in the response)
-        try:
-            # Try to parse the entire response as JSON first
-            object_data = json.loads(response_text)
-        except json.JSONDecodeError:
-            # If that fails, try to extract JSON from the text
-            import re
-            json_match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
-            if json_match:
-                object_data = json.loads(json_match.group(1))
-            else:
-                # Last resort: find anything that looks like JSON
-                json_match = re.search(r'{.*}', response_text, re.DOTALL)
-                if json_match:
-                    object_data = json.loads(json_match.group(0))
-                else:
-                    raise ValueError("Could not extract JSON from the response")
         
-        # Validate the object data
-        if not all(key in object_data for key in ["code", "name", "description"]):
-            raise ValueError("Missing required fields in the generated object data")
+        # Clean the response to remove any markdown formatting
+        cleaned_code = clean_code_from_markdown(response_text)
         
-        return object_data
+        return cleaned_code
     
     except Exception as e:
         print(f"Error generating object code: {e}")
         raise
 
-def execute_object_code(object_data: Dict[str, Any]) -> Manifold:
+def execute_object_code(code) -> Manifold:
     """
     Execute the generated Python code to create a Manifold object.
     
@@ -174,12 +154,9 @@ def execute_object_code(object_data: Dict[str, Any]) -> Manifold:
     try:
         # Create a local namespace to execute the code
         local_namespace = {
-            'Manifold': Manifold,
+            'manifold3d': manifold3d,
             'np': np
         }
-        
-        # Extract the function that creates the object
-        code = object_data["code"]
         
         # Execute the code in the local namespace
         exec(code, globals(), local_namespace)
@@ -219,90 +196,58 @@ def execute_object_code(object_data: Dict[str, Any]) -> Manifold:
         print(f"Generated code:\n{code}")
         raise
 
-def save_object(manifold_obj: Manifold, object_data: Dict[str, Any], output_dir: str) -> str:
+def load_images_from_directory(directory_path: str = "objects/100032/images") -> tuple:
     """
-    Save the Manifold object to a file.
+    Load images from a directory with standardized naming convention.
     
     Args:
-        manifold_obj: Manifold object to save
-        object_data: Dictionary containing object metadata
-        output_dir: Directory to save the object to
+        directory_path: Path to the directory containing the images
         
     Returns:
-        Path to the saved file
+        Tuple of (image_paths, labels)
     """
-    try:
-        # Create the output directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Create a filename from the object name
-        filename = f"{object_data['name'].replace(' ', '_').lower()}_{int(time.time())}"
-        
-        # Save as OBJ
-        obj_path = os.path.join(output_dir, f"{filename}.obj")
-        manifold_obj.export_mesh().write_obj(obj_path)
-        
-        # Save as STL
-        stl_path = os.path.join(output_dir, f"{filename}.stl")
-        manifold_obj.export_mesh().write_stl(stl_path)
-        
-        # Save the Python code
-        code_path = os.path.join(output_dir, f"{filename}_code.py")
-        with open(code_path, 'w') as f:
-            f.write(object_data["code"])
-        
-        # Save metadata
-        metadata_path = os.path.join(output_dir, f"{filename}_metadata.json")
-        with open(metadata_path, 'w') as f:
-            json.dump({
-                "name": object_data["name"],
-                "description": object_data["description"],
-                "timestamp": time.time()
-            }, f, indent=2)
-        
-        return obj_path
+    # Define the mapping from filename to view label
+    filename_to_label = {
+        "pos_x.jpeg": "right",
+        "neg_x.jpeg": "left",
+        "pos_y.jpeg": "top",
+        "neg_y.jpeg": "bottom",
+        "pos_z.jpeg": "front",
+        "neg_z.jpeg": "back"
+    }
     
-    except Exception as e:
-        print(f"Error saving object: {e}")
-        raise
+    # Check if directory exists
+    if not os.path.exists(directory_path):
+        raise ValueError(f"Image directory not found: {directory_path}")
+    
+    # Get all image paths and their corresponding labels
+    image_paths = []
+    labels = []
+    
+    for filename, label in filename_to_label.items():
+        file_path = os.path.join(directory_path, filename)
+        if not os.path.exists(file_path):
+            raise ValueError(f"Required image not found: {file_path}")
+        
+        image_paths.append(file_path)
+        labels.append(label)
+    
+    return image_paths, labels
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate 3D objects from 6 images using Claude Sonnet and Manifold CSG")
-    parser.add_argument("--front", type=str, required=True, help="Path to the front view image")
-    parser.add_argument("--back", type=str, required=True, help="Path to the back view image")
-    parser.add_argument("--left", type=str, required=True, help="Path to the left view image")
-    parser.add_argument("--right", type=str, required=True, help="Path to the right view image")
-    parser.add_argument("--top", type=str, required=True, help="Path to the top view image")
-    parser.add_argument("--bottom", type=str, required=True, help="Path to the bottom view image")
-    parser.add_argument("--output-dir", type=str, default="generated_objects", 
-                        help="Directory to save the generated objects")
-    
-    args = parser.parse_args()
-    
     try:
+        # Load images from the directory
+        image_paths, labels = load_images_from_directory()
+        
         print("Generating 3D object from 6 images...")
         
-        # Collect all image paths and labels
-        image_paths = [args.front, args.back, args.left, args.right, args.top, args.bottom]
-        labels = ["front", "back", "left", "right", "top", "bottom"]
-        
-        # Verify all images exist
-        for path in image_paths:
-            if not os.path.exists(path):
-                raise ValueError(f"Image file not found: {path}")
-        
         # Generate the object code from images
-        object_data = generate_object_code_from_images(image_paths, labels)
-        print(f"Generated code for: {object_data['name']}")
+        code = generate_object_code_from_images(image_paths, labels)
+        print(f"Generated code for: {code}")
         
         # Execute the code to create the Manifold object
-        manifold_obj = execute_object_code(object_data)
-        print(f"Created Manifold object with {manifold_obj.genus()} genus")
-        
-        # Save the object
-        output_path = save_object(manifold_obj, object_data, args.output_dir)
-        print(f"Saved object to: {output_path}")
-        print(f"Object description: {object_data['description']}")
+        manifold_obj = execute_object_code(code)
+        print(f"Created Manifold object with volume {manifold_obj.volume()}")
         
     except Exception as e:
         print(f"Error: {e}")

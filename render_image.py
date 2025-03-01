@@ -63,7 +63,7 @@ def render_mesh_views(mesh_path, object_name):
         #ps.reset_camera_to_home_view()
         
         # Render and save the image
-        output_path = os.path.join(output_dir, f"{view_name}.jpg")
+        output_path = os.path.join(output_dir, f"{view_name}.jpeg")
         ps.screenshot(output_path)
         print(f"Saved view {view_name} to {output_path}")
     
@@ -74,6 +74,7 @@ def process_all_objects():
     Iterate over all objects in the 'objects' directory and render views for each mesh.
     """
     ps.init()
+    ps.set_window_size(256, 256)
 
     # Create coordinate axes as curve networks
     # X axis (red)
