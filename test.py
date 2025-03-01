@@ -2,7 +2,8 @@
 from manifold3d import *
 import numpy as np
 import polyscope as ps
-
+import render_image
+import os
 def create_object():
     # Set parameters for smoother circles
     set_circular_segments(32)
@@ -67,6 +68,11 @@ def create_rounded_rectangle(width, height, radius):
     # Center the rectangle
     return rounded_rect.translate([-width/2, -height/2])
 
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
 def write_to_obj():
     
     # Create the 3D object
@@ -78,7 +84,8 @@ def write_to_obj():
     faces = np.array(mesh.tri_verts)
     
     # Write to OBJ file
-    with open('output.obj', 'w') as f:
+    ensure_dir('objects/temp')
+    with open('objects/temp/output.obj', 'w') as f:
         # Write vertices
         for v in vertices:
             f.write(f"v {v[0]} {v[1]} {v[2]}\n")
@@ -88,6 +95,8 @@ def write_to_obj():
             f.write(f"f {face[0]+1} {face[1]+1} {face[2]+1}\n")
     
     print(f"Mesh written to output.obj with {len(vertices)} vertices and {len(faces)} faces")
+    ps.init()
+    images = render_image.render_mesh_views_from_arrays(vertices, faces, "temp")
 
 if __name__ == "__main__":
     write_to_obj()
