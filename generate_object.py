@@ -13,7 +13,7 @@ import re
 import render_image
 import execute_code
 import polyscope as ps
-
+import trimesh
 # Read API key from file
 try:
     with open("api_key.txt", "r") as f:
@@ -232,6 +232,13 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
 def main():
 
     target_dir = "objects/sphere_cube/images"
+    target_obj = trimesh.load("objects/sphere_cube/output.obj")
+    target_vertices = np.array(target_obj.vertices, dtype=np.float64)
+    target_faces = np.array(target_obj.faces, dtype=np.int32)
+    mm = Mesh(target_vertices, target_faces)
+    target_volume = Manifold(mm).volume()
+    
+
 
     try:
         # Read existing code from code.py
@@ -241,7 +248,7 @@ def main():
         with open("code.py", "w") as f:
             f.write(code)
         
-        max_iterations = 5  # Set a maximum number of iterations to prevent infinite loops
+        max_iterations = 10  # Set a maximum number of iterations to prevent infinite loops
         for iteration in range(max_iterations):
             print(f"\nIteration {iteration + 1}/{max_iterations}")
             
@@ -258,8 +265,9 @@ def main():
             # Render the current object
             ps.init()
             render_image.create_coordinate_axes()
-            current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp")
+            current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp_" + str(iteration))
            
+
             # Generate the object code from images
             new_code = make_code_edit(code, target_dir, current_dir)
             
@@ -278,6 +286,14 @@ def main():
             print(f"Updated code written to code.py")
             print(f"Created Manifold object with volume {manifold_obj.volume()}")
         
+            # Write volumes to file
+            with open("volumes.txt", "w") as f:
+                f.write(f"Created object volume: {manifold_obj.volume()}\n")
+                f.write(f"Target object volume: {target_volume}\n")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+
         if iteration == max_iterations - 1:
             print("Reached maximum number of iterations.")
         
