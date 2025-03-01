@@ -73,13 +73,23 @@ def generate_object_code_from_images(image_paths: List[str], labels: List[str]) 
         raise ValueError(f"Error reading documentation: {e}")
 
     
-    
     system_prompt = f"""
-    You are an expert in 3D modeling and 3D understanding. You will be given 6 images showing different sides 
-    (front, back, left, right, top, bottom) of an object. Your task is to generate a Python script that recreates
-    the object using the Manifold CSG library.
+    You are an expert in 3D modeling and 3D understanding. You will be given 7 images:
+    - 6 images showing different sides (front, back, left, right, top, bottom) of a target object
+    - 1 image showing the current result of running the existing code
     
-    Return ONLY Python code that uses Manifold CSG operations to construct the 3D model. Do not include any JSON, markdown formatting, or explanations.
+    You will also be given the current Python code that attempts to create this 3D object.
+    
+    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first 6 images.
+    
+    The edit should be an atomic change such as:
+    - Fixing a transformation (position, rotation, scale)
+    - Adding a new primitive and unioning it with the current result
+    - Subtracting a primitive from the current result
+    - Modifying parameters of an existing primitive
+    - Changing a CSG operation
+    
+    Return ONLY the complete, updated Python code. Do not include any JSON, markdown formatting, or explanations.
     
     The code should:
     1. Define a function named 'create_object()' that returns the final Manifold object
@@ -90,7 +100,7 @@ def generate_object_code_from_images(image_paths: List[str], labels: List[str]) 
     
     {manifold_example}
     
-    Carefully analyze all 6 images to create an accurate 3D representation.
+    Focus on making one specific improvement to bring the current result closer to the target object.
     """
     
     # Prepare the message content with all images
