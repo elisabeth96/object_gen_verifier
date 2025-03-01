@@ -33,6 +33,7 @@ def write_to_obj():
     
     print(f"Mesh written to output.obj with {len(vertices)} vertices and {len(faces)} faces")
     ps.init()
+    render_image.create_coordinate_axes()
     images = render_image.render_mesh_views_from_arrays(vertices, faces, "temp")
 
 if __name__ == "__main__":

@@ -80,6 +80,28 @@ def render_mesh_views(mesh_path, object_name):
     # Use the new function to render the views
     return render_mesh_views_from_arrays(vertices, faces, object_name, output_dir)
 
+def create_coordinate_axes():
+    """
+    Create and register coordinate axes as curve networks.
+    """
+    # X axis (red)
+    x_nodes = np.array([[0, 0, 0], [1, 0, 0]])
+    x_edges = np.array([[0, 1]])
+    x_network = ps.register_curve_network("x_axis", x_nodes, x_edges)
+    x_network.set_color((1, 0, 0))  # Red
+    
+    # Y axis (green) 
+    y_nodes = np.array([[0, 0, 0], [0, 1, 0]])
+    y_edges = np.array([[0, 1]])
+    y_network = ps.register_curve_network("y_axis", y_nodes, y_edges)
+    y_network.set_color((0, 1, 0))  # Green
+    
+    # Z axis (blue)
+    z_nodes = np.array([[0, 0, 0], [0, 0, 1]])
+    z_edges = np.array([[0, 1]])
+    z_network = ps.register_curve_network("z_axis", z_nodes, z_edges)
+    z_network.set_color((0, 0, 1))  # Blue
+
 def process_all_objects():
     """
     Iterate over all objects in the 'objects' directory and render views for each mesh.
@@ -87,24 +109,8 @@ def process_all_objects():
     ps.init()
     ps.set_window_size(256, 256)
 
-    # Create coordinate axes as curve networks
-    # X axis (red)
-    x_nodes = np.array([[0, 0, 0], [1, 0, 0]])
-    x_edges = np.array([[0, 1]])
-    x_network = ps.register_curve_network("x_axis", x_nodes, x_edges)
-    x_network.set_color((1, 0, 0)) # Red
-    
-    # Y axis (green) 
-    y_nodes = np.array([[0, 0, 0], [0, 1, 0]])
-    y_edges = np.array([[0, 1]])
-    y_network = ps.register_curve_network("y_axis", y_nodes, y_edges)
-    y_network.set_color((0, 1, 0)) # Green
-    
-    # Z axis (blue)
-    z_nodes = np.array([[0, 0, 0], [0, 0, 1]])
-    z_edges = np.array([[0, 1]])
-    z_network = ps.register_curve_network("z_axis", z_nodes, z_edges)
-    z_network.set_color((0, 0, 1)) # Blue
+    # Create coordinate axes
+    create_coordinate_axes()
 
     objects_dir = "objects"
     
