@@ -1,0 +1,5 @@
+objects/
+object_gen/
+api_key.txt
+.DS_Store
+.polyscope.ini
