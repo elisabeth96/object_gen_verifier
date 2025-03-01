@@ -1,6 +1,16 @@
 from manifold3d import *
-def execute_code(code) -> Manifold:
-    pass
+
+def execute_code(code: str) -> Manifold:
+    # Create a dictionary to serve as a local namespace for exec.
+    namespace = {}
+    exec(code, namespace)  # Execute the code in the provided namespace.
+    
+    # Ensure that the expected function is defined.
+    if "create_object" not in namespace or not callable(namespace["create_object"]):
+        raise ValueError("The code must define a callable 'create_object' function.")
+    
+    # Call the create_object function and return its result.
+    return namespace["create_object"]()
 
 
 
