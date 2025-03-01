@@ -62,7 +62,7 @@ def render_mesh_views(mesh_path, object_name):
     faces = np.array(mesh_trimesh.faces, dtype=np.int32)
 
     # Use the new function to render the views
-    return render_mesh_views_from_arrays(vertices, faces, object_name, output_dir)
+    return render_mesh_views_from_arrays(vertices, faces, object_name)
 
 def create_coordinate_axes():
     # X axis (red)
@@ -90,9 +90,10 @@ def process_object():
     create_coordinate_axes()
 
     objects_dir = "objects"
-    object_name = "complex_composition"
+    object_name = "sphere_cube"
     
-    mesh_dir = os.path.join(objects_dir, object_name, "mesh")
+    mesh_dir = os.path.join(objects_dir, object_name)
+    print(mesh_dir)
     if not os.path.exists(mesh_dir):
         print(f"{object_name}: No mesh directory found")
         return
