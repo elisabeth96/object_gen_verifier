@@ -45,19 +45,19 @@ def render_mesh_views(mesh_path, object_name):
     
     # Define the 6 camera views (positive and negative directions along each axis)
     views = {
-        "pos_x": ([5.0, 0.0, 0.0], [0.0, 0.0, 0.0], "z_up"),
-        "neg_x": ([-5.0, 0.0, 0.0], [0.0, 0.0, 0.0], "z_up"), 
-        "pos_y": ([0.0, 5.0, 0.0], [0.0, 0.0, 0.0], "z_up"),
-        "neg_y": ([0.0, -5.0, 0.0], [0.0, 0.0, 0.0], "z_up"),
-        "pos_z": ([0.0, 0.0, 5.0], [0.0, 0.0, 0.0], "y_up"),
-        "neg_z": ([0.0, 0.0, -5.0], [0.0, 0.0, 0.0], "y_up")
+        "pos_x": ([3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
+        "neg_x": ([-3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]), 
+        "pos_y": ([0.0, 3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
+        "neg_y": ([0.0, -3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
+        "pos_z": ([0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
+        "neg_z": ([0.0, 0.0, -3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0])
     }
     
     # Render and save images for each view
     for view_name, (camera_pos, camera_target, up_dir) in views.items():
         # Set camera position
-        ps.look_at(camera_pos, camera_target, False)
-        ps.set_up_dir(up_dir)
+        ps.look_at_dir(camera_pos, camera_target, up_dir)
+        #ps.set_up_dir(up_dir)
         
         # Center and scale the view
         #ps.reset_camera_to_home_view()
