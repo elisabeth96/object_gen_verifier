@@ -47,19 +47,10 @@ def clean_code_from_markdown(text: str) -> str:
     return text
 
 def encode_image_to_base64(image_path: str) -> str:
-    """
-    Encode an image to base64.
-    
-    Args:
-        image_path: Path to the image file
-        
-    Returns:
-        Base64 encoded image
-    """
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def generate_object_code_from_images(image_paths: List[str], labels: List[str]) -> str:
+def make_code_edit(input_code, image_paths: List[str], labels: List[str]) -> str:
     if len(image_paths) != 6 or len(labels) != 6:
         raise ValueError("Exactly 6 images and 6 labels are required")
     
@@ -74,13 +65,13 @@ def generate_object_code_from_images(image_paths: List[str], labels: List[str]) 
 
     
     system_prompt = f"""
-    You are an expert in 3D modeling and 3D understanding. You will be given 7 images:
-    - 6 images showing different sides (front, back, left, right, top, bottom) of a target object
+    You are an expert in 3D modeling and 3D understanding. You will be given 2 images:
+    - 1 image showing the target object
     - 1 image showing the current result of running the existing code
     
     You will also be given the current Python code that attempts to create this 3D object.
     
-    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first 6 images.
+    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first image.
     
     The edit should be an atomic change such as:
     - Fixing a transformation (position, rotation, scale)
@@ -106,27 +97,28 @@ def generate_object_code_from_images(image_paths: List[str], labels: List[str]) 
     # Prepare the message content with all images
     message_content = []
     
-    for i, (image_path, label) in enumerate(zip(image_paths, labels)):
-        # Add image description
-        message_content.append({
-            "type": "text", 
-            "text": f"Image {i+1} ({label}):"
-        })
-        
-        # Add the image
-        message_content.append({
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": f"image/{image_path.split('.')[-1].lower()}",
-                "data": encode_image_to_base64(image_path)
-            }
-        })
+    # first do target image, for now we use the first image in the list
+    # Add image description
+    message_content.append({
+        "type": "text", 
+        "text": f"Image 1 (target):"
+    })
     
-    # Add final instruction
+    # Add the image
+    image_path = image_paths[0]
+    message_content.append({
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": f"image/{image_path.split('.')[-1].lower()}",
+            "data": encode_image_to_base64(image_path)
+        }
+    })
+    
+    # Add instruction
     message_content.append({
         "type": "text",
-        "text": "Based on these 6 images, generate Python code using the Manifold CSG library to create this 3D object."
+        "text": f"Current code:\n{input_code}"
     })
     
     try:
