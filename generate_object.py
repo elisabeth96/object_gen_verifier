@@ -73,10 +73,12 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     
     You will also be given the current Python code that attempts to create this 3D object.
     
-    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the images. 
+    Your task is to suggest an edit to the existing code to make the result closer to the target object shown in the images. 
     
-    The edit should be an atomic change such as:
-    - Fixing a transformation (position, rotation, scale) of an existing primitive
+    The edit should be a change such as:
+    - Scaling an existing primitive
+    - Rotating an existing primitive
+    - Moving an existing primitive
     - Adding a new primitive and unioning it with the current result
     - Subtracting a primitive from the current result
     - Modifying parameters of an existing primitive
@@ -93,7 +95,7 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     
     {manifold_example}
     
-    Focus on making one specific improvement to bring the current result closer to the target object.
+    Focus on making specific improvements to bring the current result closer to the target object. Use all of the provided images to make the best possible edit. Also make sure the scaling is correct.
     """
     
     # Get the mapping of view names to filenames
@@ -247,7 +249,7 @@ def main():
         with open("code.py", "w") as f:
             f.write(code)
         
-        max_iterations = 10  # Set a maximum number of iterations to prevent infinite loops
+        max_iterations = 30  # Set a maximum number of iterations to prevent infinite loops
         for iteration in range(max_iterations):
             print(f"\nIteration {iteration + 1}/{max_iterations}")
             
