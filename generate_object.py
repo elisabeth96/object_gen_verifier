@@ -12,6 +12,7 @@ from PIL import Image
 import re
 import render_image
 import execute_code
+import polyscope as ps
 
 # Read API key from file
 try:
@@ -67,10 +68,12 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     You are an expert in 3D modeling and 3D understanding. You will be given 2 images:
     - 1 image showing the target object
     - 1 image showing the current result of running the existing code
+    Both images are rendered from the same viewpoint and contain the coordinate axes for reference. The coordinate axes
+    are not part of the target or current result, they are only provided for context.
     
     You will also be given the current Python code that attempts to create this 3D object.
     
-    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first image.
+    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first image. 
     
     The edit should be an atomic change such as:
     - Fixing a transformation (position, rotation, scale)
@@ -208,7 +211,7 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
 
 def main():
 
-    target_dir = "objects/100032/images"
+    target_dir = "objects/sphere_cube/images"
 
     try:
         # Read existing code from code.py
@@ -233,8 +236,10 @@ def main():
             faces = np.array(mesh.tri_verts)
             
             # Render the current object
+            ps.init()
+            render_image.create_coordinate_axes()
             current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp")
-            
+           
             # Generate the object code from images
             new_code = make_code_edit(code, target_dir, current_dir)
             

@@ -11,11 +11,10 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None):
-    ps.init()
-    # Create output directory
     if output_dir is None:
         output_dir = os.path.join("objects", object_name, "images")
     ensure_dir(output_dir)
+    ps.init()
     
     # Convert arrays to the right types if needed
     vertices = np.array(vertices, dtype=np.float64)
@@ -31,6 +30,7 @@ def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None)
     
     # Register the mesh
     mesh = ps.register_surface_mesh("mesh", vertices, faces)
+    mesh.set_color((0.5, 0.5, 0.5))
     
     # Set default view options
     ps.set_ground_plane_mode("none")
