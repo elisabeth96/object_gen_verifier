@@ -159,47 +159,6 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
 
 def execute_code(code) -> Manifold:
     try:
-        # Create a local namespace to execute the code
-        local_namespace = {
-            'manifold3d': manifold3d,
-            'np': np
-        }
-        
-        # Execute the code in the local namespace
-        exec(code, globals(), local_namespace)
-        
-        # Find the created manifold object in the namespace
-        # This assumes the code creates a variable that is a Manifold object
-        manifold_obj = None
-        for var_name, var_value in local_namespace.items():
-            if isinstance(var_value, Manifold) and var_name != 'Manifold':
-                manifold_obj = var_value
-                break
-        
-        # If no manifold object was found, try to find a function that returns a manifold
-        if manifold_obj is None:
-            for var_name, var_value in local_namespace.items():
-                if callable(var_value) and var_name not in ['Manifold']:
-                    try:
-                        result = var_value()
-                        if isinstance(result, Manifold):
-                            manifold_obj = result
-                            break
-                    except:
-                        continue
-        
-        if manifold_obj is None:
-            raise ValueError("Could not find a Manifold object in the executed code")
-        
-        return manifold_obj
-    
-    except Exception as e:
-        print(f"Error executing object code: {e}")
-        print(f"Generated code:\n{code}")
-        raise
-
-def execute_code(code) -> Manifold:
-    try:
         # Create a shared namespace for execution
         exec_namespace = {
             'manifold3d': manifold3d,
@@ -232,9 +191,6 @@ def execute_code(code) -> Manifold:
         
         if manifold_obj is None:
             raise ValueError("Could not find a Manifold object in the executed code")
-        
-        if not manifold_obj.is_empty():
-            manifold_obj = manifold_obj.fix()
         
         return manifold_obj
     
