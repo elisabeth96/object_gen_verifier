@@ -65,15 +65,15 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
 
     
     system_prompt = f"""
-    You are an expert in 3D modeling and 3D understanding. You will be given 2 images:
-    - 1 image showing the target object
-    - 1 image showing the current result of running the existing code
-    Both images are rendered from the same viewpoint and contain the coordinate axes for reference. The coordinate axes
+    You are an expert in 3D modeling and 3D understanding. You will be given 6 images:
+    - 3 images showing the target object from different views (front, top, right)
+    - 3 images showing the current result of running the existing code from the same views
+    All images contain the coordinate axes for reference. The coordinate axes
     are not part of the target or current result, they are only provided for context.
     
     You will also be given the current Python code that attempts to create this 3D object.
     
-    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the first image. 
+    Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the images. 
     
     The edit should be an atomic change such as:
     - Fixing a transformation (position, rotation, scale)
@@ -96,43 +96,63 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     Focus on making one specific improvement to bring the current result closer to the target object.
     """
     
+    # Get the mapping of view names to filenames
+    _, label_to_filename = load_images_from_directory(target_dir)
+    
     # Prepare the message content with all images
     message_content = []
     
-    # first do target image, for now we use the first image in the list
-    # Add image description
+    # Add all target images
     message_content.append({
         "type": "text", 
-        "text": f"Image 1 (target):"
+        "text": f"Target object images (from 3 different views):"
     })
     
-    # Add the image
-    image_path = os.path.join(target_dir, "pos_z.jpeg")
-    message_content.append({
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": f"image/{image_path.split('.')[-1].lower()}",
-            "data": encode_image_to_base64(image_path)
-        }
-    })
+    view_labels = ["front", "top", "right"]
+    
+    for view in view_labels:
+        # Add view description
+        message_content.append({
+            "type": "text", 
+            "text": f"Target {view} view:"
+        })
+        
+        # Add the image
+        filename = label_to_filename[view]
+        image_path = os.path.join(target_dir, filename)
+        message_content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": f"image/{image_path.split('.')[-1].lower()}",
+                "data": encode_image_to_base64(image_path)
+            }
+        })
 
-    # Add current result image
+    # Add all current result images
     message_content.append({
         "type": "text", 
-        "text": f"Image 2 (current result):"
+        "text": f"Current result images (from 3 different views):"
     })
     
-    # Add the image
-    image_path = os.path.join(current_dir, "pos_z.jpeg")
-    message_content.append({
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": f"image/{image_path.split('.')[-1].lower()}",
-            "data": encode_image_to_base64(image_path)
-        }
-    })
+    for view in view_labels:
+        # Add view description
+        message_content.append({
+            "type": "text", 
+            "text": f"Current {view} view:"
+        })
+        
+        # Add the image
+        filename = label_to_filename[view]
+        image_path = os.path.join(current_dir, filename)
+        message_content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": f"image/{image_path.split('.')[-1].lower()}",
+                "data": encode_image_to_base64(image_path)
+            }
+        })
     
     # Add instruction
     message_content.append({
@@ -142,7 +162,7 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     
     try:
         message = client.messages.create(
-            model="claude-3-7-sonnet-20250219",
+            model="claude-3-5-sonnet-20241022",
             system=system_prompt,
             max_tokens=4000,
             temperature=0.7,
@@ -175,11 +195,11 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
     # Define the mapping from filename to view label
     filename_to_label = {
         "pos_x.jpeg": "right",
-        "neg_x.jpeg": "left",
+        #"neg_x.jpeg": "left",
         "pos_y.jpeg": "top",
-        "neg_y.jpeg": "bottom",
+        #"neg_y.jpeg": "bottom",
         "pos_z.jpeg": "front",
-        "neg_z.jpeg": "back"
+        #"neg_z.jpeg": "back"
     }
 
     label_to_filename = {

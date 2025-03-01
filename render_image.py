@@ -36,14 +36,14 @@ def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None)
     ps.set_ground_plane_mode("none")
     ps.set_screenshot_extension(".jpg")
     
-    # Define the 6 camera views (positive and negative directions along each axis)
+    # Define all 6 camera views (positive and negative directions along each axis)
     views = {
-        "pos_x": ([3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
-        "neg_x": ([-3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]), 
-        "pos_y": ([0.0, 3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
-        "neg_y": ([0.0, -3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
-        "pos_z": ([0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
-        "neg_z": ([0.0, 0.0, -3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0])
+        "pos_x": ([3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),  # right view
+        "neg_x": ([-3.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),  # left view
+        "pos_y": ([0.0, 3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),  # top view
+        "neg_y": ([0.0, -3.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]),  # bottom view
+        "pos_z": ([0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]),   # front view
+        "neg_z": ([0.0, 0.0, -3.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0])   # back view
     }
     
     # Render and save images for each view
