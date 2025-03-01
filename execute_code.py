@@ -12,8 +12,6 @@ def execute_code(code: str) -> Manifold:
     # Call the create_object function and return its result.
     return namespace["create_object"]()
 
-
-
 if __name__ == "__main__":
     # Load test string from initial_code.py
     with open("initial_code.py", "r") as f:

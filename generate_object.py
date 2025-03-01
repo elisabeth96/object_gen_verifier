@@ -236,9 +236,8 @@ def main():
     target_vertices = np.array(target_obj.vertices, dtype=np.float64)
     target_faces = np.array(target_obj.faces, dtype=np.int32)
     mm = Mesh(target_vertices, target_faces)
-    target_volume = Manifold(mm).volume()
-    
-
+    target = Manifold(mm)
+    target_volume = target.volume()
 
     try:
         # Read existing code from code.py
@@ -284,13 +283,17 @@ def main():
             with open("code.py", "w") as f:
                 f.write(code)
             print(f"Updated code written to code.py")
+
+            symmetric_difference = (manifold_obj - target) + (target - manifold_obj)
+            error = symmetric_difference.volume()
             print(f"Created Manifold object with volume {manifold_obj.volume()}")
-        
+            print(f"Error: {error}")
             # Write volumes to file
             with open("objects/temp_" + str(iteration) + "/volumes.txt", "w") as f:
                 f.write(f"Created object volume: {manifold_obj.volume()}\n")
                 f.write(f"Target object volume: {target_volume}\n")
-            
+                f.write(f"Error: {error}\n")
+
     except Exception as e:
         print(f"Error: {e}")
 

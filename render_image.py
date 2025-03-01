@@ -90,7 +90,7 @@ def process_object():
     create_coordinate_axes()
 
     objects_dir = "objects"
-    object_name = "sphere_cube"
+    object_name = "complex"
     
     mesh_dir = os.path.join(objects_dir, object_name)
     print(mesh_dir)
