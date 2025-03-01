@@ -10,6 +10,7 @@ from manifold3d import *
 import numpy as np
 from PIL import Image
 import re
+import render_image
 
 # Read API key from file
 try:
@@ -50,10 +51,7 @@ def encode_image_to_base64(image_path: str) -> str:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def make_code_edit(input_code, image_paths: List[str], labels: List[str]) -> str:
-    if len(image_paths) != 6 or len(labels) != 6:
-        raise ValueError("Exactly 6 images and 6 labels are required")
-    
+def make_code_edit(input_code, target_dir, current_dir) -> str:
     # Read Manifold documentation from docs.txt
     try:
         with open("example.txt", "r") as f:
@@ -84,8 +82,7 @@ def make_code_edit(input_code, image_paths: List[str], labels: List[str]) -> str
     
     The code should:
     1. Define a function named 'create_object()' that returns the final Manifold object
-    2. Include a descriptive name for the object as a comment at the top
-    3. Use Manifold CSG operations (not raw mesh data with vertices and faces)
+    2. Use Manifold CSG operations (not raw mesh data with vertices and faces)
     
     Here's an example of how to use the Manifold library:
     
@@ -105,7 +102,24 @@ def make_code_edit(input_code, image_paths: List[str], labels: List[str]) -> str
     })
     
     # Add the image
-    image_path = image_paths[0]
+    image_path = os.path.join(target_dir, "pos_z.jpeg")
+    message_content.append({
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": f"image/{image_path.split('.')[-1].lower()}",
+            "data": encode_image_to_base64(image_path)
+        }
+    })
+
+    # Add current result image
+    message_content.append({
+        "type": "text", 
+        "text": f"Image 2 (current result):"
+    })
+    
+    # Add the image
+    image_path = os.path.join(current_dir, "pos_z.jpeg")
     message_content.append({
         "type": "image",
         "source": {
@@ -143,16 +157,7 @@ def make_code_edit(input_code, image_paths: List[str], labels: List[str]) -> str
         print(f"Error generating object code: {e}")
         raise
 
-def execute_object_code(code) -> Manifold:
-    """
-    Execute the generated Python code to create a Manifold object.
-    
-    Args:
-        object_data: Dictionary containing the Python code
-        
-    Returns:
-        Manifold object
-    """
+def execute_code(code) -> Manifold:
     try:
         # Create a local namespace to execute the code
         local_namespace = {
@@ -217,7 +222,16 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
         "pos_z.jpeg": "front",
         "neg_z.jpeg": "back"
     }
-    
+
+    label_to_filename = {
+        "right": "pos_x.jpeg",
+        "left": "neg_x.jpeg",
+        "top": "pos_y.jpeg",
+        "bottom": "neg_y.jpeg",
+        "front": "pos_z.jpeg",
+        "back": "neg_z.jpeg"
+    }
+
     # Check if directory exists
     if not os.path.exists(directory_path):
         raise ValueError(f"Image directory not found: {directory_path}")
@@ -234,21 +248,33 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
         image_paths.append(file_path)
         labels.append(label)
     
-    return image_paths, labels
+    return image_paths, label_to_filename
 
 def main():
+
+    target_dir = "objects/100032/images"
+
     try:
-        # Load images from the directory
-        image_paths, labels = load_images_from_directory()
-        
-        print("Generating 3D object from 6 images...")
-        
+        # Read existing code from code.py
+        with open("code.py", "r") as f:
+            code = f.read()
+
+        manifold_obj = execute_code(code)
+        mesh = manifold_obj.to_mesh()
+        vertices = np.array(mesh.vert_properties)
+        faces = np.array(mesh.tri_verts)
+
+        current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp") 
         # Generate the object code from images
-        code = generate_object_code_from_images(image_paths, labels)
+        code = make_code_edit(code, target_dir, current_dir)
         print(f"Generated code for: {code}")
         
+        # Write the updated code to code.py
+        with open("code.py", "w") as f:
+            f.write(code)
+        print(f"Updated code written to code.py")
+        
         # Execute the code to create the Manifold object
-        manifold_obj = execute_object_code(code)
         print(f"Created Manifold object with volume {manifold_obj.volume()}")
         
     except Exception as e:

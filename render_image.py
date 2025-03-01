@@ -11,18 +11,6 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None):
-    """
-    Render 6 views of a mesh from different perspectives using directly provided vertex and face arrays.
-    
-    Args:
-        vertices: Numpy array of shape (N, 3) containing vertex coordinates
-        faces: Numpy array of shape (M, 3) containing face indices
-        object_name: Name of the object (used for output directory)
-        output_dir: Optional custom output directory. If None, uses 'objects/{object_name}/images'
-    
-    Returns:
-        List of paths to the saved images
-    """
     # Create output directory
     if output_dir is None:
         output_dir = os.path.join("objects", object_name, "images")
@@ -70,7 +58,7 @@ def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None)
         print(f"Saved view {view_name} to {output_path}")
     
     print(f"All 6 views of {object_name} have been rendered and saved to {output_dir}")
-    return saved_paths
+    return output_dir
 
 def render_mesh_views(mesh_path, object_name):
     """

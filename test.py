@@ -74,7 +74,6 @@ def ensure_dir(directory):
 
 
 def write_to_obj():
-    
     # Create the 3D object
     obj = create_object()
     
