@@ -287,7 +287,7 @@ def main():
             print(f"Created Manifold object with volume {manifold_obj.volume()}")
         
             # Write volumes to file
-            with open("volumes.txt", "w") as f:
+            with open("objects/temp_" + str(iteration) + "/volumes.txt", "w") as f:
                 f.write(f"Created object volume: {manifold_obj.volume()}\n")
                 f.write(f"Target object volume: {target_volume}\n")
             
