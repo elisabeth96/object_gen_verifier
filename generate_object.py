@@ -76,7 +76,7 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     Your task is to suggest a SINGLE, SMALL EDIT to the existing code to make the result closer to the target object shown in the images. 
     
     The edit should be an atomic change such as:
-    - Fixing a transformation (position, rotation, scale)
+    - Fixing a transformation (position, rotation, scale) of an existing primitive
     - Adding a new primitive and unioning it with the current result
     - Subtracting a primitive from the current result
     - Modifying parameters of an existing primitive
@@ -88,7 +88,7 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     1. Define a function named 'create_object()' that returns the final Manifold object
     2. Use Manifold CSG operations (not raw mesh data with vertices and faces)
     
-    Here's an example of how to use the Manifold library. Only use the functions and operations that appear in this example, and only use them in the exact form as they are used in the example.
+    Here's an example of how to use the Manifold library. Only use the functions and operations that appear in this example, and only use them in the exact form as they are used in the example. You can change the parameters of the functions, but don't add additional arguments when calling the function.
     In particular make sure to use the correct arguments for the functions, don't assume that you can add additional arguments when calling the function.
     
     {manifold_example}
@@ -232,7 +232,7 @@ def load_images_from_directory(directory_path: str = "objects/100032/images") ->
 def main():
 
     target_dir = "objects/sphere_cube/images"
-    target_obj = trimesh.load("objects/sphere_cube/output.obj")
+    target_obj = trimesh.load("objects/sphere_cube/sphere_cube.obj")
     target_vertices = np.array(target_obj.vertices, dtype=np.float64)
     target_faces = np.array(target_obj.faces, dtype=np.int32)
     mm = Mesh(target_vertices, target_faces)
