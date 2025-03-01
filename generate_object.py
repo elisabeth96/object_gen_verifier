@@ -191,9 +191,49 @@ def execute_code(code) -> Manifold:
         if manifold_obj is None:
             raise ValueError("Could not find a Manifold object in the executed code")
         
-        # Ensure the manifold is valid
+        return manifold_obj
+    
+    except Exception as e:
+        print(f"Error executing object code: {e}")
+        print(f"Generated code:\n{code}")
+        raise
+
+def execute_code(code) -> Manifold:
+    try:
+        # Create a shared namespace for execution
+        exec_namespace = {
+            'manifold3d': manifold3d,
+            'np': np
+        }
+        
+        # Execute the code in the shared namespace
+        exec(code, exec_namespace)
+        
+        # Attempt to find a Manifold object
+        manifold_obj = None
+        
+        # First, check if any variable in the namespace is a Manifold instance
+        for var_name, var_value in exec_namespace.items():
+            if isinstance(var_value, Manifold) and var_name != 'Manifold':
+                manifold_obj = var_value
+                break
+        
+        # If no instance is found, call any callable to see if it returns one
+        if manifold_obj is None:
+            for var_name, var_value in exec_namespace.items():
+                if callable(var_value) and var_name != 'Manifold':
+                    try:
+                        result = var_value()
+                        if isinstance(result, Manifold):
+                            manifold_obj = result
+                            break
+                    except Exception:
+                        continue
+        
+        if manifold_obj is None:
+            raise ValueError("Could not find a Manifold object in the executed code")
+        
         if not manifold_obj.is_empty():
-            # Fix any issues with the manifold
             manifold_obj = manifold_obj.fix()
         
         return manifold_obj
