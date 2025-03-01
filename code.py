@@ -2,17 +2,20 @@ from manifold3d import *
 import numpy as np
 
 def create_object():
-    # Create cube scaled to correct size
-    cube = Manifold.cube((0.4, 0.4, 0.4)).translate((0.8, 0, 0))
+    # Create a cube scaled to correct size
+    cube = Manifold.cube((0.4, 0.4, 0.4))
     
-    # Create octahedron by using sphere with fewer segments
-    set_circular_segments(8)
-    octahedron = Manifold.sphere(0.2)
+    # Create a sphere with more segments to make it rounder
+    set_circular_segments(32)  # Increased segments for smoother appearance
+    sphere = Manifold.sphere(0.15)  # Reduced sphere size
     
-    # Position octahedron relative to cube
-    octahedron = octahedron.translate((0, 0, 0))
+    # Position the sphere relative to the cube
+    sphere = sphere.translate((-0.3, 0, 0))
     
-    # Combine cube and octahedron
-    result = cube + octahedron
+    # Move the cube to match target position
+    cube = cube.translate((0.4, 0, 0))
+    
+    # Combine the shapes
+    result = cube + sphere
     
     return result

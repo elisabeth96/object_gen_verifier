@@ -95,7 +95,7 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     
     {manifold_example}
     
-    Focus on making specific improvements to bring the current result closer to the target object. Use all of the provided images to make the best possible edit. Also make sure the scaling is correct.
+    Focus on making specific improvements to bring the current result closer to the target object. Use all of the provided images to make the best possible edit. Also make sure the scaling and the positioning relative to the coordinate axes is correct.
     """
     
     # Get the mapping of view names to filenames
