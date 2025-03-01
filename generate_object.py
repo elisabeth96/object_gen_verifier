@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image
 import re
 import render_image
+import execute_code
 
 # Read API key from file
 try:
@@ -84,7 +85,8 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
     1. Define a function named 'create_object()' that returns the final Manifold object
     2. Use Manifold CSG operations (not raw mesh data with vertices and faces)
     
-    Here's an example of how to use the Manifold library:
+    Here's an example of how to use the Manifold library. Only use the functions and operations that appear in this example, and only use them in the exact form as they are used in the example.
+    In particular make sure to use the correct arguments for the functions, don't assume that you can add additional arguments when calling the function.
     
     {manifold_example}
     
@@ -157,48 +159,6 @@ def make_code_edit(input_code, target_dir, current_dir) -> str:
         print(f"Error generating object code: {e}")
         raise
 
-def execute_code(code) -> Manifold:
-    try:
-        # Create a shared namespace for execution
-        exec_namespace = {
-            'manifold3d': manifold3d,
-            'np': np
-        }
-        
-        # Execute the code in the shared namespace
-        exec(code, exec_namespace)
-        
-        # Attempt to find a Manifold object
-        manifold_obj = None
-        
-        # First, check if any variable in the namespace is a Manifold instance
-        for var_name, var_value in exec_namespace.items():
-            if isinstance(var_value, Manifold) and var_name != 'Manifold':
-                manifold_obj = var_value
-                break
-        
-        # If no instance is found, call any callable to see if it returns one
-        if manifold_obj is None:
-            for var_name, var_value in exec_namespace.items():
-                if callable(var_value) and var_name != 'Manifold':
-                    try:
-                        result = var_value()
-                        if isinstance(result, Manifold):
-                            manifold_obj = result
-                            break
-                    except Exception:
-                        continue
-        
-        if manifold_obj is None:
-            raise ValueError("Could not find a Manifold object in the executed code")
-        
-        return manifold_obj
-    
-    except Exception as e:
-        print(f"Error executing object code: {e}")
-        print(f"Generated code:\n{code}")
-        raise
-
 def load_images_from_directory(directory_path: str = "objects/100032/images") -> tuple:
     """
     Load images from a directory with standardized naming convention.
@@ -252,26 +212,49 @@ def main():
 
     try:
         # Read existing code from code.py
-        with open("code.py", "r") as f:
+        with open("initial_code.py", "r") as f:
             code = f.read()
-
-        manifold_obj = execute_code(code)
-        mesh = manifold_obj.to_mesh()
-        vertices = np.array(mesh.vert_properties)
-        faces = np.array(mesh.tri_verts)
-
-        current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp") 
-        # Generate the object code from images
-        code = make_code_edit(code, target_dir, current_dir)
-        print(f"Generated code for: {code}")
-        
-        # Write the updated code to code.py
+        # Write the initial code to code.py
         with open("code.py", "w") as f:
             f.write(code)
-        print(f"Updated code written to code.py")
         
-        # Execute the code to create the Manifold object
-        print(f"Created Manifold object with volume {manifold_obj.volume()}")
+        max_iterations = 5  # Set a maximum number of iterations to prevent infinite loops
+        for iteration in range(max_iterations):
+            print(f"\nIteration {iteration + 1}/{max_iterations}")
+            
+            # Read the current code from code.py
+            with open("code.py", "r") as f:
+                code = f.read()
+            
+            # Execute the code to create the Manifold object
+            manifold_obj = execute_code.execute_code(code)
+            mesh = manifold_obj.to_mesh()
+            vertices = np.array(mesh.vert_properties)
+            faces = np.array(mesh.tri_verts)
+            
+            # Render the current object
+            current_dir = render_image.render_mesh_views_from_arrays(vertices, faces, "temp")
+            
+            # Generate the object code from images
+            new_code = make_code_edit(code, target_dir, current_dir)
+            
+            # Check if the code has changed
+            if new_code == code:
+                print("Code has converged - no further changes needed.")
+                break
+                
+            # Update the code for the next iteration
+            code = new_code
+            print(f"Generated new code: {code}")
+            
+            # Write the updated code to code.py
+            with open("code.py", "w") as f:
+                f.write(code)
+            print(f"Updated code written to code.py")
+            print(f"Created Manifold object with volume {manifold_obj.volume()}")
+        
+        if iteration == max_iterations - 1:
+            print("Reached maximum number of iterations.")
         
     except Exception as e:
         print(f"Error: {e}")

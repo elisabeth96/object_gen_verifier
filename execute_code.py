@@ -20,4 +20,5 @@ if __name__ == "__main__":
         code = f.read()
     print(f"Loaded code {code}")
     manifold_obj = execute_code(code)
+
     print(f"Created Manifold object with volume {manifold_obj.volume()}")

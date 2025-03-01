@@ -11,6 +11,7 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None):
+    ps.init()
     # Create output directory
     if output_dir is None:
         output_dir = os.path.join("objects", object_name, "images")
