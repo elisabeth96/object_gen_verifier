@@ -6,13 +6,11 @@ import polyscope as ps
 import polyscope.imgui as imgui
 
 def ensure_dir(directory):
-    """Create directory if it doesn't exist."""
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None):
-    if output_dir is None:
-        output_dir = os.path.join("objects", object_name, "images")
+def render_mesh_views_from_arrays(vertices, faces, object_name):
+    output_dir = os.path.join("objects", object_name, "images")
     ensure_dir(output_dir)
     ps.init()
     
@@ -20,14 +18,6 @@ def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None)
     vertices = np.array(vertices, dtype=np.float64)
     faces = np.array(faces, dtype=np.int32)
 
-    # Center the mesh at origin
-    center = np.mean(vertices, axis=0)
-    vertices = vertices - center
-
-    # Scale to unit size
-    max_dim = np.max(vertices.max(axis=0) - vertices.min(axis=0))
-    vertices = vertices / max_dim
-    
     # Register the mesh
     mesh = ps.register_surface_mesh("mesh", vertices, faces)
     mesh.set_color((0.5, 0.5, 0.5))
@@ -62,13 +52,6 @@ def render_mesh_views_from_arrays(vertices, faces, object_name, output_dir=None)
     return output_dir
 
 def render_mesh_views(mesh_path, object_name):
-    """
-    Load a mesh and render 6 views from different perspectives.
-    
-    Args:
-        mesh_path: Path to the mesh file
-        object_name: Name of the object (used for output directory)
-    """
     # Create output directory
     output_dir = os.path.join("objects", object_name, "images")
     ensure_dir(output_dir)
@@ -82,9 +65,6 @@ def render_mesh_views(mesh_path, object_name):
     return render_mesh_views_from_arrays(vertices, faces, object_name, output_dir)
 
 def create_coordinate_axes():
-    """
-    Create and register coordinate axes as curve networks.
-    """
     # X axis (red)
     x_nodes = np.array([[0, 0, 0], [1, 0, 0]])
     x_edges = np.array([[0, 1]])
@@ -103,44 +83,37 @@ def create_coordinate_axes():
     z_network = ps.register_curve_network("z_axis", z_nodes, z_edges)
     z_network.set_color((0, 0, 1))  # Blue
 
-def process_all_objects():
-    """
-    Iterate over all objects in the 'objects' directory and render views for each mesh.
-    """
+def process_object():
     ps.init()
     ps.set_window_size(256, 256)
 
-    # Create coordinate axes
     create_coordinate_axes()
 
     objects_dir = "objects"
+    object_name = "complex_composition"
     
-    # Get all object directories
-    object_dirs = [d for d in os.listdir(objects_dir) 
-                  if os.path.isdir(os.path.join(objects_dir, d)) and not d.startswith('.')]
+    mesh_dir = os.path.join(objects_dir, object_name, "mesh")
+    if not os.path.exists(mesh_dir):
+        print(f"{object_name}: No mesh directory found")
+        return
     
-    print(f"Found {len(object_dirs)} objects to process")
+    # Find the mesh file (check for both .stl and .obj extensions)
+    stl_path = os.path.join(mesh_dir, f"{object_name}.stl")
+    obj_path = os.path.join(mesh_dir, f"{object_name}.obj")
     
-    for object_name in object_dirs:
-        mesh_dir = os.path.join(objects_dir, object_name, "mesh")
-        if not os.path.exists(mesh_dir):
-            print(f"Skipping {object_name}: No mesh directory found")
-            continue
+    if os.path.exists(stl_path):
+        mesh_path = stl_path
+    elif os.path.exists(obj_path):
+        mesh_path = obj_path
+    else:
+        print(f"{object_name}: No mesh file found (checked for both .stl and .obj)")
+        return
         
-        # Find the mesh file (should be named object_name.stl)
-        mesh_path = os.path.join(mesh_dir, f"{object_name}.stl")
-        if not os.path.exists(mesh_path):
-            print(f"Skipping {object_name}: No mesh file found at {mesh_path}")
-            continue
-        
-        print(f"Processing {object_name}...")
-        render_mesh_views(mesh_path, object_name)
-        break
-
-
+    print(f"Processing {object_name}...")
+    render_mesh_views(mesh_path, object_name)
 
 def main():
-    process_all_objects()
+    process_object()
 
 if __name__ == "__main__":
     main()
