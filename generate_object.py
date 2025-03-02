@@ -249,7 +249,7 @@ def main():
         with open("code.py", "w") as f:
             f.write(code)
         
-        max_iterations = 30  # Set a maximum number of iterations to prevent infinite loops
+        max_iterations = 60  # Set a maximum number of iterations to prevent infinite loops
         for iteration in range(max_iterations):
             print(f"\nIteration {iteration + 1}/{max_iterations}")
             

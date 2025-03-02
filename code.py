@@ -2,18 +2,18 @@ from manifold3d import *
 import numpy as np
 
 def create_object():
-    # Create a cube scaled to correct size
-    cube = Manifold.cube((0.4, 0.4, 0.4))
+    # Create a cube scaled to the right size
+    cube = Manifold.cube((0.3, 0.3, 0.3))
     
-    # Create a sphere with more segments to make it rounder
-    set_circular_segments(32)  # Increased segments for smoother appearance
-    sphere = Manifold.sphere(0.15)  # Reduced sphere size
+    # Create a polyhedron by reducing segments
+    set_circular_segments(10)  # Further reduce segments for more faceted appearance
+    sphere = Manifold.sphere(0.15)  # Keep sphere size
     
     # Position the sphere relative to the cube
-    sphere = sphere.translate((-0.3, 0, 0))
+    sphere = sphere.translate((-0.3, 0, 0))  # Move sphere further left
     
-    # Move the cube to match target position
-    cube = cube.translate((0.4, 0, 0))
+    # Move cube to correct position
+    cube = cube.translate((0, 0, 0))  # Keep cube at origin
     
     # Combine the shapes
     result = cube + sphere
